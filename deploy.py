@@ -20,4 +20,3 @@ model = SKLearnModel(
 predictor = model.deploy(instance_type="ml.t2.medium", initial_instance_count=1)
 
 print("Model deployed at endpoint:", predictor.endpoint_name)
-
