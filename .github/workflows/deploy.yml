@@ -1,6 +1,9 @@
 name: Deploy to SageMaker
 
 on:
+  push:
+    branches:
+      - main
   workflow_dispatch:
 
 jobs:
