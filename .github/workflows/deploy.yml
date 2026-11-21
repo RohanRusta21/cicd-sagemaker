@@ -22,7 +22,7 @@ jobs:
 
     - name: Train the model
       run: |
-        python train.py
+        python model/train.py
         tar -czvf model.${{ github.run_id }}.tar.gz model.pkl
 
     - name: Upload model artifact
