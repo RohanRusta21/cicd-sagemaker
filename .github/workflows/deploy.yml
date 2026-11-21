@@ -2,9 +2,6 @@ name: Deploy to SageMaker
 
 on:
   workflow_dispatch:
-  # push:
-  #   branches:
-  #     - main
 
 jobs:
   deploy:
@@ -12,10 +9,10 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: '3.10'
 
@@ -23,10 +20,28 @@ jobs:
       run: |
         pip install boto3 numpy sagemaker==2.257.7 scikit-learn==1.3.2
 
-    - name: Deploy Model to SageMaker
-      env:
-        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        AWS_DEFAULT_REGION: us-east-1
+    - name: Train the model
+      run: |
+        python train.py
+        tar -czvf model.${{ github.run_id }}.tar.gz model.pkl
 
+    - name: Upload model artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: model-${{ github.run_id }}
+        path: model.${{ github.run_id }}.tar.gz
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-east-1
+
+    - name: Upload model to S3
+      run: |
+        aws s3 rm s3://models-sagemaker-iris-rohan/model/model.${{ github.run_id }}.tar.gz || true
+        aws s3 cp model.${{ github.run_id }}.tar.gz s3://models-sagemaker-iris-rohan/model/model.${{ github.run_id }}.tar.gz
+
+    - name: Deploy Model to SageMaker
       run: python deploy.py
